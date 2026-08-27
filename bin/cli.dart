@@ -9,7 +9,7 @@ void main(List<String> arguments) {
     printUsage();
   } else if (arguments.first == "version") {
     print("Dart version $version");
-  } else if (arguments.first == "search") {
+  } else if (arguments.first == "wikipedia") {
     final inputArgs = arguments.length > 1 ? arguments.sublist(1) : null;
     searchWikipedia(inputArgs);
   } else {
@@ -23,18 +23,38 @@ void printUsage() {
   );
 }
 
-void searchWikipedia(List<String>? arguments) {
+void searchWikipedia(List<String>? arguments) async {
   final String articleTitle;
 
   if (arguments == null || arguments.isEmpty) {
     print(' Please provide an article title');
 
-    articleTitle = stdin.readLineSync() ?? "";
+    final inputFormStdin = stdin.readLineSync();
+    if (inputFormStdin == null || inputFormStdin.isEmpty) {
+      print('No article title provided. Exiting...');
+      return;
+    }
+    articleTitle = inputFormStdin;
   } else {
     articleTitle = arguments.join(' ');
   }
 
   print('Looking up articles about "$articleTitle". Please wait.');
-  print('Here ya go!');
-  print('(Pretend this is an article about "$articleTitle")');
+  var articleContent = await getWikipediaArticle(articleTitle);
+  print(articleContent);
+}
+
+Future<String> getWikipediaArticle(String articleTitle) async {
+  final url = Uri.https(
+    'en.wikipedia.org', // Wikipedia API domain
+    '/api/rest_v1/page/summary/$articleTitle', // API path for article summary
+  );
+
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    return response.body;
+  }
+
+  return 'Error: Failed to fetch article "$articleTitle". Status code: ${response.statusCode}';
 }
